@@ -2,6 +2,8 @@ defmodule BootEnv.Exception do
   @error_list [
     :schema_param_duplication,
     :invalid_param_value,
+    :invalid_param_key,
+    :invalid_config,
     :missing_param
   ]
 

@@ -2,13 +2,13 @@ defmodule BootEnv.Util do
   require BootEnv.Exception, as: BootError
 
   defmacro __before_compile__(%Macro.Env{module: caller}) do
-    keys =
+    validators =
       BootEnv
       |> Agent.get(&Map.get(&1, caller))
-      |> MapSet.to_list()
 
     get_priv_clauses =
-      keys
+      validators
+      |> Map.keys()
       |> Enum.flat_map(fn [_ | _] = path ->
         1..length(path)
         |> Enum.map(&Enum.take(path, &1))
@@ -28,7 +28,7 @@ defmodule BootEnv.Util do
       end)
 
     quote do
-      defp boot_env, do: unquote(keys)
+      defp boot_env, do: unquote(validators |> Map.to_list())
       unquote_splicing(get_priv_clauses)
 
       defp get_priv(path) do

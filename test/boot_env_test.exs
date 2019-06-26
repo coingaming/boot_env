@@ -24,7 +24,7 @@ defmodule BootEnvTest do
   test "can run vaid GS" do
     :ok = Application.put_env(:my_app, :foo, 100)
     :ok = Application.put_env(:my_app, :bar, 200)
-    :ok = Application.put_env(:my_app, MyApp.Repo, host: 5432)
+    :ok = Application.put_env(:my_app, MyApp.Repo, host: "127.0.0.1")
 
     gs = BootEnvTest.Valid
 
@@ -61,11 +61,11 @@ defmodule BootEnvTest do
       end
       |> Code.eval_quoted()
 
-    assert r0 == %{MyApp.Repo => %{host: 5432}, :bar => 200, :foo => 100}
+    assert r0 == %{MyApp.Repo => %{host: "127.0.0.1"}, :bar => 200, :foo => 100}
     assert r1 == 100
     assert r2 == 200
-    assert r3 == %{host: 5432}
-    assert r4 == 5432
+    assert r3 == %{host: "127.0.0.1"}
+    assert r4 == "127.0.0.1"
 
     assert_raise BootEnv.Exception.InvalidParamKey, ~r//, fn ->
       quote do

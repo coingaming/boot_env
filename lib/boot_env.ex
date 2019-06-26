@@ -15,12 +15,22 @@ defmodule BootEnv do
     %Macro.Env{module: caller} = __CALLER__
     _ = Agent.start(fn -> %{} end, name: __MODULE__)
 
+    validator_fn =
+      {:fn, [],
+       [
+         {:->, [],
+          [
+            [param],
+            validator
+          ]}
+       ]}
+
     __MODULE__
     |> Agent.update(fn %{} = mod_configs ->
       mod_configs
-      |> Map.update(caller, MapSet.new([full_path]), fn %MapSet{} = ms ->
+      |> Map.update(caller, %{full_path => validator_fn}, fn %{} = ms ->
         ms
-        |> MapSet.member?(full_path)
+        |> Map.has_key?(full_path)
         |> case do
           true ->
             BootError.schema_param_duplication(
@@ -28,7 +38,7 @@ defmodule BootEnv do
             )
 
           false ->
-            MapSet.put(ms, full_path)
+            Map.put(ms, full_path, validator_fn)
         end
       end)
     end)
@@ -36,8 +46,11 @@ defmodule BootEnv do
     __MODULE__
     |> Agent.get(&Map.get(&1, caller))
     |> case do
-      %MapSet{} -> :ok
-      BootError.schema_param_duplication(_) = e -> raise e
+      BootError.schema_param_duplication(_) = e ->
+        raise e
+
+      %{} = ms ->
+        :ok = Enum.each(ms, fn {[_ | _], {:fn, _, _}} -> :ok end)
     end
 
     #
@@ -79,14 +92,22 @@ defmodule BootEnv do
       def init(_) do
         state =
           boot_env()
-          |> Enum.reduce(%{}, fn [app | [_ | _] = path] = full_path, acc = %{} ->
+          |> Enum.reduce(%{}, fn {[app | [_ | _] = path] = full_path, validator}, acc = %{}
+                                 when is_function(validator, 1) ->
             val =
               app
               |> Application.get_all_env()
               |> Util.deep_get!(path)
 
-            acc
-            |> Util.deep_put(full_path, val)
+            validator.(val)
+            |> case do
+              true ->
+                acc
+                |> Util.deep_put(full_path, val)
+
+              false ->
+                raise BootError.invalid_param_value(inspect(full_path))
+            end
           end)
 
         {

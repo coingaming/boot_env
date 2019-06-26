@@ -33,9 +33,7 @@ defmodule BootEnv do
         |> Map.has_key?(full_path)
         |> case do
           true ->
-            BootError.schema_param_duplication(
-              "config param #{inspect(full_path)} for #{caller} has been already defined!"
-            )
+            BootError.schema_param_duplication(inspect(full_path))
 
           false ->
             Map.put(ms, full_path, validator_fn)

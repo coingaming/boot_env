@@ -10,7 +10,7 @@ defmodule BootEnv do
   """
   defmacro env({name, ctx, _} = param, do: validator) when is_atom(name) and name != nil do
     [_ | _] = ctx_path = Keyword.get(ctx, __MODULE__)
-    full_path = ctx_path ++ [name]
+    full_path = Enum.concat(ctx_path, [name])
 
     %Macro.Env{module: caller} = __CALLER__
     _ = Agent.start(fn -> %{} end, name: __MODULE__)
@@ -51,10 +51,6 @@ defmodule BootEnv do
         :ok = Enum.each(ms, fn {[_ | _], {:fn, _, _}} -> :ok end)
     end
 
-    #
-    # TODO !!!
-    #
-
     nil
   end
 
@@ -68,7 +64,7 @@ defmodule BootEnv do
       |> Macro.update_meta(fn meta ->
         meta
         |> Keyword.update(__MODULE__, [k], fn [_ | _] = ks ->
-          ks ++ [k]
+          Enum.concat(ks, [k])
         end)
       end)
     end)

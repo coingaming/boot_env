@@ -1,0 +1,16 @@
+{
+  "coverage_options": {
+    "treat_no_relevant_lines_as_covered": false,
+    "minimum_coverage": 100
+  },
+  "skip_files": [
+    "test/*",
+
+    "lib/boot_env_web.ex",
+    "lib/boot_env/application.ex",
+    "lib/boot_env/repo.ex",
+
+    "lib/boot_env_web/endpoint.ex",
+    "lib/boot_env_web/router.ex"
+  ]
+}

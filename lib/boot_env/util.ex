@@ -9,11 +9,6 @@ defmodule BootEnv.Util do
     get_priv_clauses =
       validators
       |> Map.keys()
-      |> Enum.flat_map(fn [_ | _] = path ->
-        1..length(path)
-        |> Enum.map(&Enum.take(path, &1))
-      end)
-      |> Enum.uniq()
       |> Enum.map(fn path ->
         quote do
           defp get_priv(unquote(path)) do
@@ -35,6 +30,11 @@ defmodule BootEnv.Util do
         raise BootError.invalid_param_key(inspect(path))
       end
 
+      @doc """
+      Safe macro to fetch valid config parameters,
+      has compile-time and runtime guarantees
+      according given `conf/2` and `env/2` schema
+      """
       defmacro get(quoted_path) do
         {path, []} = quoted_path |> Code.eval_quoted([], __CALLER__)
         get_priv(path)
@@ -42,6 +42,26 @@ defmodule BootEnv.Util do
     end
   end
 
+  @doc """
+  Strict `get_in/2` function to fetch
+  deep data from map/keyword list
+
+  ## Examples
+
+  ```
+  iex> BootEnv.Util.deep_get!(%{foo: [bar: 123]}, [:foo, :bar])
+  123
+
+  iex> BootEnv.Util.deep_get!(%{foo: [bar: 123]}, [:foo, :bar, :baz])
+  ** (BootEnv.Exception.InvalidConfig) 123
+
+  iex> BootEnv.Util.deep_get!(%{foo: [bar: 123]}, [:foo, :hello])
+  ** (BootEnv.Exception.MissingParam) :hello
+
+  iex> BootEnv.Util.deep_get!(%{foo: [bar: 123]}, [:hello])
+  ** (BootEnv.Exception.MissingParam) :hello
+  ```
+  """
   def deep_get!(some, []) do
     some
   end
@@ -79,6 +99,20 @@ defmodule BootEnv.Util do
     end
   end
 
+  @doc """
+  Safe `put_in/2` function to put
+  value to nested map
+
+  ## Examples
+
+  ```
+  iex> BootEnv.Util.deep_put(%{foo: 123}, [:bar, :baz], 321)
+  %{foo: 123, bar: %{baz: 321}}
+
+  iex> BootEnv.Util.deep_put(%{foo: %{hello: 123}}, [:foo, :bar, :baz], 321)
+  %{foo: %{hello: 123, bar: %{baz: 321}}}
+  ```
+  """
   def deep_put(%{} = acc, [k], v) do
     Map.put(acc, k, v)
   end

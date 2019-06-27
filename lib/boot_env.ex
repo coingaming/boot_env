@@ -1,12 +1,21 @@
 defmodule BootEnv do
   @moduledoc """
-  TODO : !!!!!!!!!!
+  Configuration provider to load and validate immutable application configs during boot process
   """
 
   require BootEnv.Exception, as: BootError
 
   @doc """
-  TODO : !!!!!!!!!!
+  Macro to declare configuration parameter
+  and validation code for it (should be boolean expression)
+
+  ## Example
+
+  ```
+  env host do
+    String.valid?(host) and (host != "")
+  end
+  ```
   """
   defmacro env({name, ctx, _} = param, do: validator) when is_atom(name) and name != nil do
     [_ | _] = ctx_path = Keyword.get(ctx, __MODULE__)
@@ -54,6 +63,23 @@ defmodule BootEnv do
     nil
   end
 
+  @doc """
+  Macro to declare configuration scope,
+  can be nested and can contain `env/2` expressions
+
+  ## Example
+
+  ```
+  conf :my_app do
+    env foo, do: is_integer(foo)
+    env bar, do: is_integer(bar)
+
+    conf MyApp.Repo do
+      env host, do: String.valid?(host)
+    end
+  end
+  ```
+  """
   defmacro conf(key_ast, do: code) do
     {k, []} = Code.eval_quoted(key_ast, [], __CALLER__)
     true = is_atom(k) and k != nil

@@ -13,10 +13,14 @@ defmodule BootEnv.Util do
         quote do
           defp get_priv(unquote(path)) do
             path_ast = unquote(path)
-            gs = __MODULE__
+            this_ets = ets_table()
 
             quote do
-              GenServer.call(unquote(gs), {:get, unquote(path_ast)})
+              [{unquote(path_ast), val}] =
+                unquote(this_ets)
+                |> :ets.lookup(unquote(path_ast))
+
+              val
             end
           end
         end

@@ -42,6 +42,9 @@ defmodule BootEnv do
         |> Map.has_key?(full_path)
         |> case do
           true ->
+            #
+            # TODO : similar check for `conf/2` name
+            #
             BootError.schema_param_duplication(inspect(full_path))
 
           false ->
@@ -97,6 +100,12 @@ defmodule BootEnv do
   end
 
   defmacro __using__(_) do
+    %Macro.Env{module: caller} = __CALLER__
+
+    ets_table =
+      "boot_env_ets_cache_#{Atom.to_string(caller)}"
+      |> String.to_atom()
+
     quote do
       use GenServer
       import BootEnv, only: [conf: 2, env: 2]
@@ -104,16 +113,28 @@ defmodule BootEnv do
       require BootEnv.Exception, as: BootError
       @before_compile Util
 
+      defmacrop ets_table do
+        unquote(ets_table)
+      end
+
       def start_link(_ \\ []) do
         GenServer.start_link(__MODULE__, [], name: __MODULE__)
       end
 
       @impl true
       def init(_) do
-        state =
+        ets_table() =
+          :ets.new(ets_table(), [
+            :protected,
+            :named_table,
+            {:read_concurrency, true},
+            {:write_concurrency, true}
+          ])
+
+        :ok =
           boot_env()
-          |> Enum.reduce(%{}, fn {[app | [_ | _] = path] = full_path, validator}, acc = %{}
-                                 when is_function(validator, 1) ->
+          |> Enum.each(fn {[app | [_ | _] = path] = full_path, validator}
+                          when is_function(validator, 1) ->
             val =
               app
               |> Application.get_all_env()
@@ -122,27 +143,14 @@ defmodule BootEnv do
             validator.(val)
             |> case do
               true ->
-                acc
-                |> Util.deep_put(full_path, val)
+                true = :ets.insert(ets_table(), {full_path, val})
 
               false ->
                 raise BootError.invalid_param_value(inspect(full_path))
             end
           end)
 
-        {
-          :ok,
-          state
-        }
-      end
-
-      @impl true
-      def handle_call({:get, path}, _, %{} = state) do
-        {
-          :reply,
-          Util.deep_get!(state, path),
-          state
-        }
+        {:ok, nil}
       end
     end
   end

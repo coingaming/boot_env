@@ -45,11 +45,10 @@ defmodule BootEnvTest do
       end
       |> Code.eval_quoted()
 
-    assert {:ok, _} = gs.start_link()
-
     {{r0, r1, r2}, []} =
       quote do
         require unquote(gs)
+        {:ok, _} = unquote(gs).start_link()
 
         {
           unquote(gs).get([:my_app, :foo]),

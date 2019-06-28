@@ -4,13 +4,12 @@
 
 ## Installation
 
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `boot_env` to your list of dependencies in `mix.exs`:
+The package can be installed by adding `boot_env` to your list of dependencies in `mix.exs`:
 
 ```elixir
 def deps do
   [
-    {:boot_env, "~> 0.1.0"}
+    {:boot_env, "~> 0.1.0", organization: "coingaming"}
   ]
 end
 ```

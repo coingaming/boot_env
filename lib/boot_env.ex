@@ -131,26 +131,34 @@ defmodule BootEnv do
             {:write_concurrency, true}
           ])
 
-        :ok =
-          boot_env()
-          |> Enum.each(fn {[app | [_ | _] = path] = full_path, validator}
-                          when is_function(validator, 1) ->
-            val =
-              app
-              |> Application.get_all_env()
-              |> Util.deep_get!(path)
-
-            validator.(val)
-            |> case do
-              true ->
-                true = :ets.insert(ets_table(), {full_path, val})
-
-              false ->
-                raise BootError.invalid_param_value(inspect(full_path))
-            end
-          end)
-
+        :ok = seed_ets_table()
         {:ok, nil}
+      end
+
+      @impl true
+      def handle_call(:reseed, _, nil) do
+        :ok = seed_ets_table()
+        {:reply, :ok, nil}
+      end
+
+      defp seed_ets_table do
+        boot_env()
+        |> Enum.each(fn {[app | [_ | _] = path] = full_path, validator}
+                        when is_function(validator, 1) ->
+          val =
+            app
+            |> Application.get_all_env()
+            |> Util.deep_get!(path)
+
+          validator.(val)
+          |> case do
+            true ->
+              true = :ets.insert(ets_table(), {full_path, val})
+
+            false ->
+              raise BootError.invalid_param_value(inspect(full_path))
+          end
+        end)
       end
     end
   end

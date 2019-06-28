@@ -51,9 +51,9 @@ defmodule BootEnvTest do
         {:ok, _} = unquote(gs).start_link()
 
         {
-          unquote(gs).get([:my_app, :foo]),
-          unquote(gs).get([:my_app, :bar]),
-          unquote(gs).get([:my_app, MyApp.Repo, :host])
+          unquote(gs).get_env([:my_app, :foo]),
+          unquote(gs).get_env([:my_app, :bar]),
+          unquote(gs).get_env([:my_app, MyApp.Repo, :host])
         }
       end
       |> Code.eval_quoted()
@@ -65,9 +65,34 @@ defmodule BootEnvTest do
     assert_raise BootEnv.Exception.InvalidParamKey, ~r//, fn ->
       quote do
         require unquote(gs)
-        unquote(gs).get([:my_app, :not_exist])
+        unquote(gs).get_env([:my_app, :not_exist])
       end
       |> Code.eval_quoted()
     end
+
+    #
+    # reseed
+    #
+
+    :ok = Application.put_env(:my_app, :foo, 999)
+
+    {x, []} =
+      quote do
+        require unquote(gs)
+        unquote(gs).get_env([:my_app, :foo])
+      end
+      |> Code.eval_quoted()
+
+    assert x == 100
+    assert :ok = gs.reseed()
+
+    {y, []} =
+      quote do
+        require unquote(gs)
+        unquote(gs).get_env([:my_app, :foo])
+      end
+      |> Code.eval_quoted()
+
+    assert y == 999
   end
 end

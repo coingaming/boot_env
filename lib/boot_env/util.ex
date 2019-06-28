@@ -39,9 +39,19 @@ defmodule BootEnv.Util do
       has compile-time and runtime guarantees
       according given `conf/2` and `env/2` schema
       """
-      defmacro get(quoted_path) do
+      defmacro get_env(quoted_path) do
         {path, []} = quoted_path |> Code.eval_quoted([], __CALLER__)
         get_priv(path)
+      end
+
+      @doc """
+      Function to reseed ETS storage, if you
+      changed Application env and want to apply
+      changes. Not recommended to use (runtime
+      mutation of Application env is bad idea).
+      """
+      def reseed do
+        GenServer.call(__MODULE__, :reseed)
       end
     end
   end

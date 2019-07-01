@@ -74,7 +74,7 @@ The package can be installed by adding `boot_env` to your list of dependencies i
 ```elixir
 def deps do
   [
-    {:boot_env, "~> 0.1.0", organization: "coingaming"}
+    {:boot_env, "~> 0.1.1"}
   ]
 end
 ```

@@ -36,7 +36,6 @@ defmodule BootEnv.MixProject do
       # hex.pm stuff
       description: "configuration provider to load and validate immutable application configs during boot process",
       package: [
-        organization: "coingaming",
         licenses: ["Apache 2.0"],
         files: ["lib", "priv", "mix.exs", "README*", "VERSION*"],
         maintainers: ["ILJA TKACHUK"],

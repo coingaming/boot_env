@@ -78,3 +78,7 @@ def deps do
   ]
 end
 ```
+
+## Notes
+
+I very recommend to combine this tool with [ExEnv](https://github.com/coingaming/ex_env).
